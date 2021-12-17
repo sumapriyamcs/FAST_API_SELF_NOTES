@@ -1,0 +1,70 @@
+'''
+1.As FastAPI is based on the ASGI standard, it's very easy to integrate any GraphQL 
+library also compatible with ASGI.
+
+You can combine normal FastAPI path operations with GraphQL on the same application.
+
+2.GraphQL Libraries:
+
+Here are some of the GraphQL libraries that have ASGI support. You could use them with FastAPI:
+
+Strawberry 
+With docs for FastAPI
+Ariadne
+With docs for Starlette (that also apply to FastAPI)
+Tartiflette
+With Tartiflette ASGI to provide ASGI integration
+Graphene
+With starlette-graphene3
+
+3.GraphQL with Strawberry:
+
+If you need or want to work with GraphQL, Strawberry is the recommended library as it has the design closest 
+to FastAPI's design, it's all based on type annotations.
+
+Depending on your use case, you might prefer to use a different library, but if you asked me, 
+I would probably suggest you try Strawberry.
+
+
+
+import strawberry
+from fastapi import FastAPI
+
+from strawberry.asgi import GraphQL
+
+
+
+@strawberry.type
+class User:
+    name: str
+    age: int
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def user(self) -> User:
+        return User(name="Patrick", age=100)
+
+
+schema = strawberry.Schema(query=Query)
+
+
+
+graphql_app = GraphQL(schema)
+
+
+app = FastAPI()
+
+app.add_route("/graphql", graphql_app)
+
+app.add_websocket_route("/graphql", graphql_app)
+
+
+4.Older GraphQLApp from Starlette:
+Previous versions of Starlette included a GraphQLApp class to integrate with Graphene.
+
+It was deprecated from Starlette, but if you have code that used it, you can easily migrate
+to starlette-graphene3, that covers the same use case and has an almost identical interface.
+
+'''

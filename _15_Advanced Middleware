@@ -1,0 +1,112 @@
+'''1.Adding ASGI middlewares:
+
+As FastAPI is based on Starlette and implements the ASGI specification, you can use any ASGI middleware.
+
+A middleware doesn't have to be made for FastAPI or Starlette to work, as long as it follows the ASGI spec.
+
+In general, ASGI middlewares are classes that expect to receive an ASGI app as the first argument.
+
+So, in the documentation for third-party ASGI middlewares they will probably tell you to do something like
+
+'''
+
+from unicorn import UnicornMiddleware
+
+app = SomeASGIApp()
+
+new_app = UnicornMiddleware(app, some_config="rainbow")
+
+'''
+But FastAPI (actually Starlette) provides a simpler way to do it that makes sure that the internal
+middlewares to handle server errors and custom exception handlers work properly.
+
+For that, you use app.add_middleware() (as in the example for CORS).
+
+'''
+
+from fastapi import FastAPI
+from unicorn import UnicornMiddleware
+
+app = FastAPI()
+
+app.add_middleware(UnicornMiddleware, some_config="rainbow")
+
+'''
+app.add_middleware() receives a middleware class as the first
+argument and any additional arguments to be passed to the middleware.
+
+
+2.Integrated middlewares:
+
+FastAPI includes several middlewares for common use cases
+
+3.HTTPSRedirectMiddleware:
+
+Enforces that all incoming requests must either be https or wss.
+
+Any incoming requests to http or ws will be redirected to the secure scheme instead.
+
+
+from fastapi import FastAPI
+from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
+
+app = FastAPI()
+
+app.add_middleware(HTTPSRedirectMiddleware)
+
+
+@app.get("/")
+async def main():
+    return {"message": "Hello World"}
+
+
+4.TrustedHostMiddleware:
+
+Enforces that all incoming requests have a correctly set Host header, 
+in order to guard against HTTP Host Header attacks.
+
+
+from fastapi import FastAPI
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+
+app = FastAPI()
+
+app.add_middleware(
+    TrustedHostMiddleware, allowed_hosts=["example.com", "*.example.com"]
+)
+
+
+@app.get("/")
+async def main():
+    return {"message": "Hello World"}
+
+The following arguments are supported:
+
+allowed_hosts - A list of domain names that should be allowed as hostnames.
+Wildcard domains such as *.example.com are supported 
+for matching subdomains to allow any hostname either use allowed_hosts=["*"] or omit the middleware.
+
+5.GZipMiddleware:
+
+Handles GZip responses for any request that includes "gzip" in the Accept-Encoding header.
+
+The middleware will handle both standard and streaming responses.
+
+
+from fastapi import FastAPI
+from fastapi.middleware.gzip import GZipMiddleware
+
+app = FastAPI()
+
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+
+@app.get("/")
+async def main():
+    return "somebigcontent"
+The following arguments are supported:
+ 
+minimum_size - Do not GZip responses that are smaller than this minimum size in bytes. Defaults to 500.
+
+
+'''

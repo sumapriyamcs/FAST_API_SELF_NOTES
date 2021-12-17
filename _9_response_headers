@@ -1,0 +1,50 @@
+'''1.Use a Response parameter:
+
+You can declare a parameter of type Response in your path operation function (as you can do for cookies).
+
+And then you can set headers in that temporal response object.
+'''
+
+from fastapi import FastAPI, Response
+
+app = FastAPI()
+
+
+@app.get("/headers-and-object/")
+def get_headers(response: Response):
+    response.headers["X-Cat-Dog"] = "alone in the world"
+    return {"message": "Hello World"}
+
+'''
+And then you can return any object you need, as you normally would (a dict, a database model, etc).
+
+And if you declared a response_model, it will still be used to filter and convert the object you returned.
+
+FastAPI will use that temporal response to extract the headers (also cookies and status code), and will 
+put them in the final response that contains the value you returned, filtered by any response_model.
+
+You can also declare the Response parameter in dependencies, and set headers (and cookies) in them.
+
+2.Return a Response directly:
+
+You can also add headers when you return a Response directly.
+
+Create a response as described in Return a Response Directly and pass the headers as an additional parameter:
+
+
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+
+app = FastAPI()
+
+
+@app.get("/headers/")
+def get_headers():
+    content = {"message": "Hello World"}
+    headers = {"X-Cat-Dog": "alone in the world", "Content-Language": "en-US"}
+    return JSONResponse(content=content, headers=headers)
+
+
+
+
+'''

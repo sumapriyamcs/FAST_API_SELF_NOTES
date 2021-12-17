@@ -1,0 +1,399 @@
+'''
+1.Custom Response - HTML, Stream, File, others:
+
+if you return a Response directly, the data won't be automatically converted, 
+and the documentation won't be automatically generated (for example, including the specific "media type", 
+in the HTTP header Content-Type as part of the generated OpenAPI).
+
+you can also declare the Response that you want to be used, in the path operation decorator.
+
+The contents that you return from your path operation function will be put inside of that Response.
+
+And if that Response has a JSON media type (application/json), like is the case with the 
+JSONResponse and UJSONResponse, the data you return will be automatically converted (and filtered)
+with any Pydantic response_model that you declared in the path operation decorator.
+
+2.Use ORJSONResponse:
+
+if you are squeezing performance, you can install and use orjson and set the response to be ORJSONResponse.
+
+Import the Response class (sub-class) you want to use and declare it in the path operation decorator.
+'''
+from fastapi import FastAPI
+
+from fastapi.responses import ORJSONResponse
+
+
+app = FastAPI()
+
+
+
+@app.get("/items/", response_class=ORJSONResponse)
+
+async def read_items():
+    return [{"item_id": "Foo"}]
+
+
+'''
+3.HTML Response:
+
+To return a response with HTML directly from FastAPI, use HTMLResponse.
+
+1.Import HTMLResponse.
+2.Pass HTMLResponse as the parameter response_class of your path operation decorator.
+
+'''
+from fastapi import FastAPI
+
+from fastapi.responses import HTMLResponse
+
+
+app = FastAPI()
+
+
+
+@app.get("/items/", response_class=HTMLResponse)
+
+async def read_items():
+    return """
+    <html>
+        <head>
+            <title>Some HTML in here</title>
+        </head>
+        <body>
+            <h1>Look ma! HTML!</h1>
+        </body>
+    </html>
+    """
+
+'''
+4.Return a Response:
+
+As seen in Return a Response directly, 
+you can also override the response directly in your path operation, by returning it.
+
+'''
+
+from fastapi import FastAPI
+
+from fastapi.responses import HTMLResponse
+
+
+app = FastAPI()
+
+
+
+@app.get("/items/")
+
+async def read_items():
+    html_content = """
+    <html>
+        <head>
+            <title>Some HTML in here</title>
+        </head>
+        <body>
+            <h1>Look ma! HTML!</h1>
+        </body>
+    </html>
+    """
+
+    return HTMLResponse(content=html_content, status_code=200)
+'''
+4.Document in OpenAPI and override Response:
+
+If you want to override the response from inside of the function but at the same time
+document the "media type" in OpenAPI, you can use the response_class parameter AND return a Response object.
+
+The response_class will then be used only to document the OpenAPI path operation, but your 
+Response will be used as is.
+
+Return an HTMLResponse directly
+
+the function generate_html_response() already generates and returns a Response
+instead of returning the HTML in a str.
+
+By returning the result of calling generate_html_response(), you are already returning 
+a Response that will override the default FastAPI behavior.
+
+But as you passed the HTMLResponse in the response_class too, FastAPI will know how to document it
+in OpenAPI and the interactive docs as HTML with text/html
+
+
+'''
+
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+
+app = FastAPI()
+
+
+
+def generate_html_response():
+
+    html_content = """
+    <html>
+        <head>
+            <title>Some HTML in here</title>
+        </head>
+        <body>
+            <h1>Look ma! HTML!</h1>
+        </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content, status_code=200)
+
+
+
+@app.get("/items/", response_class=HTMLResponse)
+
+async def read_items():
+
+    return generate_html_response()
+
+'''
+6.Available responses:
+The main Response class, all the other responses inherit from it.
+
+You can return it directly.
+
+It accepts the following parameters:
+
+content - A str or bytes.
+status_code - An int HTTP status code.
+headers - A dict of strings.
+media_type - A str giving the media type. E.g. "text/html".
+
+FastAPI (actually Starlette) will automatically include a Content-Length header. It will also 
+include a Content-Type header, based on the media_type and appending a charset for text types.
+
+'''
+
+from fastapi import FastAPI, Response
+
+
+app = FastAPI()
+
+
+@app.get("/legacy/")
+def get_legacy_data():
+    data = """<?xml version="1.0"?>
+    <shampoo>
+    <Header>
+        Apply shampoo here.
+    </Header>
+    <Body>
+        You'll have to use soap here.
+    </Body>
+    </shampoo>
+    """
+
+    return Response(content=data, media_type="application/xml")
+'''
+
+7.PlainTextResponse:
+
+'''
+
+from fastapi import FastAPI
+
+from fastapi.responses import PlainTextResponse
+
+
+app = FastAPI()
+
+
+
+@app.get("/", response_class=PlainTextResponse)
+
+async def main():
+
+    return "Hello World"
+
+'''7.JSONResponse:
+
+Takes some data and returns an application/json encoded response.
+
+This is the default response used in FastAPI, as you read above.
+
+ORJSONResponse:
+
+A fast alternative JSON response using orjson, as you read above.
+
+UJSONResponse:
+
+An alternative JSON response using ujson'
+
+'''
+
+from fastapi import FastAPI
+
+from fastapi.responses import UJSONResponse
+
+
+app = FastAPI()
+
+
+
+@app.get("/items/", response_class=UJSONResponse)
+
+async def read_items():
+    return [{"item_id": "Foo"}]
+
+
+'''
+8.RedirectResponse:
+
+from fastapi import FastAPI
+
+from fastapi.responses import RedirectResponse
+
+
+app = FastAPI()
+
+
+@app.get("/typer")
+async def redirect_typer():
+
+    return RedirectResponse("https://typer.tiangolo.com")
+
+
+Or you can use it in the response_class parameter:
+
+from fastapi import FastAPI
+
+from fastapi.responses import RedirectResponse
+
+
+app = FastAPI()
+
+
+
+@app.get("/fastapi", response_class=RedirectResponse)
+
+async def redirect_fastapi():
+
+    return "https://fastapi.tiangolo.com"
+
+
+You can also use the status_code parameter combined with the response_class parameter:
+
+from fastapi import FastAPI
+
+from fastapi.responses import RedirectResponse
+
+
+app = FastAPI()
+
+
+
+@app.get("/pydantic", response_class=RedirectResponse, status_code=302)
+
+async def redirect_pydantic():
+
+    return "https://pydantic-docs.helpmanual.io/"
+'''
+
+'''
+9.StreamingResponse:
+
+Takes an async generator or a normal generator/iterator and streams the response body.
+
+
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+
+app = FastAPI()
+
+
+async def fake_video_streamer():
+    for i in range(10):
+        yield b"some fake video bytes"
+
+
+@app.get("/")
+async def main():
+    return StreamingResponse(fake_video_streamer())
+
+
+'''
+
+
+'''
+10. Using StreamingResponse with file-like objects:
+
+If you have a file-like object (e.g. the object returned by open()), you can create 
+a generator function to iterate over that file-like object.
+
+That way, you don't have to read it all first in memory, and you can pass that generator
+function to the StreamingResponse, and return it.
+
+This includes many libraries to interact with cloud storage, video processing, and others.
+
+
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+
+some_file_path = "large-video-file.mp4"
+app = FastAPI()
+
+
+@app.get("/")
+def main():
+    def iterfile():  # 
+
+        with open(some_file_path, mode="rb") as file_like:  # 
+
+            yield from file_like  # 
+
+
+    return StreamingResponse(iterfile(), media_type="video/mp4")
+
+11.FileResponse:
+
+Asynchronously streams a file as the response.
+
+Takes a different set of arguments to instantiate than the other response types:
+
+path - The filepath to the file to stream.
+headers - Any custom headers to include, as a dictionary.
+media_type - A string giving the media type. If unset, the filename or path will be used to infer a media type.
+filename - If set, this will be included in the response Content-Disposition.
+File responses will include appropriate Content-Length, Last-Modified and ETag headers.
+
+
+from fastapi import FastAPI
+
+from fastapi.responses import FileResponse
+
+
+some_file_path = "large-video-file.mp4"
+app = FastAPI()
+
+
+@app.get("/")
+async def main():
+
+    return FileResponse(some_file_path)
+
+
+12.Default response class:
+
+When creating a FastAPI class instance or an APIRouter you can specify which response class to use by default.
+
+The parameter that defines this is default_response_class.
+
+In the example below, FastAPI will use ORJSONResponse by default, in all path operations, 
+instead of JSONResponse.
+
+
+from fastapi import FastAPI
+from fastapi.responses import ORJSONResponse
+
+app = FastAPI(default_response_class=ORJSONResponse)
+
+
+@app.get("/items/")
+async def read_items():
+    return [{"item_id": "Foo"}]
+'''
+

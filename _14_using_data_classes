@@ -1,0 +1,174 @@
+'''
+1.Using Dataclasses:
+FastAPI is built on top of Pydantic, and I have been showing you how to use Pydantic models 
+to declare requests and responses.
+
+But FastAPI also supports using dataclasses the same way:
+
+'''
+
+from dataclasses import dataclass
+from typing import Optional
+
+from fastapi import FastAPI
+
+
+@dataclass
+class Item:
+    name: str
+    price: float
+    description: Optional[str] = None
+    tax: Optional[float] = None
+
+
+app = FastAPI()
+
+
+@app.post("/items/")
+async def create_item(item: Item):
+    return item
+'''
+This is still thanks to Pydantic, as it has internal support for dataclasses.
+
+So, even with the code above that doesn't use Pydantic explicitly, FastAPI is using Pydantic to 
+convert those standard dataclasses to Pydantic's own flavor of dataclasses.
+
+And of course, it supports the same:
+
+data validation
+data serialization
+data documentation, etc.
+This works the same way as with Pydantic models. And it is actually achieved in the same way underneath,
+using Pydantic.
+
+2.Dataclasses in response_model:
+
+You can also use dataclasses in the response_model parameter:
+
+
+from dataclasses import dataclass, field
+from typing import List, Optional
+
+from fastapi import FastAPI
+
+
+@dataclass
+class Item:
+    name: str
+    price: float
+    tags: List[str] = field(default_factory=list)
+    description: Optional[str] = None
+    tax: Optional[float] = None
+
+
+app = FastAPI()
+
+
+@app.get("/items/next", response_model=Item)
+async def read_next_item():
+    return {
+        "name": "Island In The Moon",
+        "price": 12.99,
+        "description": "A place to be be playin' and havin' fun",
+        "tags": ["breater"],
+    }
+The dataclass will be automatically converted to a Pydantic dataclass.
+
+3.Dataclasses in Nested Data Structures:
+
+You can also combine dataclasses with other type annotations to make nested data structures.
+
+In some cases, you might still have to use Pydantic's version of dataclasses. For example, 
+if you have errors with the automatically generated API documentation.
+
+In that case, you can simply swap the standard dataclasses with pydantic.dataclasses,
+which is a drop-in replacement:
+
+
+from dataclasses import field  # 
+
+
+from typing import List, Optional
+
+from fastapi import FastAPI
+from pydantic.dataclasses import dataclass  # 
+
+
+
+
+@dataclass
+class Item:
+    name: str
+    description: Optional[str] = None
+
+
+@dataclass
+class Author:
+    name: str
+    items: List[Item] = field(default_factory=list)  # 
+
+
+
+
+app = FastAPI()
+
+
+@app.post("/authors/{author_id}/items/", response_model=Author)  # 
+
+
+async def create_author_items(author_id: str, items: List[Item]):  # 
+
+
+
+    return {"name": author_id, "items": items}  # 
+
+
+
+
+
+@app.get("/authors/", response_model=List[Author])  # 
+
+
+
+def get_authors():  # 
+
+
+
+
+    return [  # 
+
+
+
+        {
+            "name": "Breaters",
+            "items": [
+                {
+                    "name": "Island In The Moon",
+                    "description": "A place to be be playin' and havin' fun",
+                },
+                {"name": "Holy Buddies"},
+            ],
+        },
+        {
+            "name": "System of an Up",
+            "items": [
+                {
+                    "name": "Salt",
+                    "description": "The kombucha mushroom people's favorite",
+                },
+                {"name": "Pad Thai"},
+                {
+                    "name": "Lonely Night",
+                    "description": "The mostests lonliest nightiest of allest",
+                },
+            ],
+        },
+    ]
+
+
+ You can combine dataclasses with other type annotations 
+ in many different combinations to form complex data structures. 
+   
+'''
+
+
